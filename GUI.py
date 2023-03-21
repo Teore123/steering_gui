@@ -368,8 +368,9 @@ class MyApp(QWidget):
         data = []
         for value in self.Sine_Str_value:
             data.append(value.value())
-        # data = [speed, cycle, offset, amp]
+        # data[0] = 
         data = data[2:] + data[:2]
+
         print(data)
         if data[0] + data[1] > 900 or data[0] - data[1] < 0:
             msg = 'Please adjust the range of Init Angle and Amplitude to be Small.'
