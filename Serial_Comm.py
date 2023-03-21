@@ -14,6 +14,8 @@ class Serial_Comm(QObject):
         self.status = status
         self.flag = threading.Event()
         self.q = Queue()
+        self.last_angle = 180
+        self.plot_angle = 180
 
     def set_comoprt(self):
         list = sp.comports()
@@ -61,8 +63,19 @@ class Serial_Comm(QObject):
         
     def set_Motor_status(self, data):
         torque = self.cal_bytes(data[2:4]) / 0x800 * self.status.Kt * 33
-        encoder = self.cal_bytes(data[6:]) / self.status.enc_counter * 360
+        encoder = self.anglge_cal(data[6:])
         return encoder, torque
+    
+    def anglge_cal(self, data):
+        angle = np.array((data[1] << 8) | data[0]).astype(np.uint16)
+        angle = angle / self.status.enc_counter * 360
+        if self.last_angle - angle > 200:
+            self.plot_angle += 360
+        elif angle - self.last_angle > 200:
+            self.plot_angle -= 360
+        self.plot_angle += angle - self.last_angle
+        self.last_angle = angle
+        return self.plot_angle
         
     def cal_bytes(self, data):
         return np.array((data[1] << 8) | data[0]).astype(np.int16)
