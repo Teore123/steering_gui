@@ -14,7 +14,7 @@ class Steer_Status():
     plot_range = 10  # 10 sec data display
     
     # [xmin, xmax, ymin, ymax]    
-    axis_limit = [[-5,5,0,360],[-5,5,-10,10],[-5,-5,-5,5]] 
+    axis_limit = [[-5,5,0,1000],[-5,5,-10,10],[-5,-5,-5,5]] 
     
     num = int(plot_range / time_interval)
     tor_data = np.zeros(num)
