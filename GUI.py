@@ -315,8 +315,8 @@ class MyApp(QWidget):
         amp = int(amp / 9 * 100)
         amp1 = (amp >> 8) & 0xff
         amp2 = amp & 0xff
-        data = [rps, cycle, amp1, amp2]
-        self.Serial.send_str(mode, data)
+        self.data = [rps, cycle, amp1, amp2]
+        self.Serial.send_str(mode, self.data)
     
     def pause(self): # send msg Pause to MCU
         if self.is_pause:
@@ -373,18 +373,18 @@ class MyApp(QWidget):
     
     def sineStr(self): # send msg Sine Str to MCU
         mode = self.status.SineStr
-        data = []
+        self.data = []
         for value in self.Sine_Str_value:
-            data.append(value.value())
-        data[0] = int(data[0] / 9)
-        data[1] = int(data[1] / 9)
-        data[2] = int(50 * data[2])
-        if data[0] + data[1] > 100 or data[0] - data[1] < 0:
+            self.data.append(value.value())
+        self.data[0] = int(self.data[0] / 9)
+        self.data[1] = int(self.data[1] / 9)
+        self.data[2] = int(50 * self.data[2])
+        if self.data[0] + self.data[1] > 100 or self.data[0] - self.data[1] < 0:
             msg = 'Please adjust the range of Init Angle and Amplitude to be Small.'
             QMessageBox.about(self, "Connecting", msg)
         else:
-            data = data[2:] + data[:2]
-            self.Serial.send_str(mode, data)
+            self.data = self.data[2:] + self.data[:2]
+            self.Serial.send_str(mode, self.data)
     
     def set_btn(self): # make Button Return2zero & Emergency stop
         self.btn_r2z = QPushButton("Return to Zero")
@@ -442,7 +442,7 @@ class MyApp(QWidget):
             self.update_gui(status)
             self.append_data(status)
             self.btn_able(status)
-                # self.save_data(values)
+            self.save_data.save_data(status)
         except:
             self.Serial.q.put(True)
             self.Serial.ser.close()
