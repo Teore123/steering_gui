@@ -307,8 +307,16 @@ class MyApp(QWidget):
         self.Serial.send_mode(self.status.L2L) # mode
 
     def constStr(self): # send msg Const Str to MCU 
-        # self.constStr_cycle.value()
-        print("not yet4")
+        mode = self.status.ConstStr
+        rps = self.Const_RPS.value() # flaot
+        rps = int((rps - 0.5) * 100 / 1.3)
+        cycle = self.constStr_cycle.value()
+        amp = self.constStr_range.value()
+        amp = int(amp / 9 * 100)
+        amp1 = (amp >> 8) & 0xff
+        amp2 = amp & 0xff
+        data = [rps, cycle, amp1, amp2]
+        self.Serial.send_str(mode, data)
     
     def pause(self): # send msg Pause to MCU
         if self.is_pause:
@@ -368,16 +376,15 @@ class MyApp(QWidget):
         data = []
         for value in self.Sine_Str_value:
             data.append(value.value())
-        # data[0] = 
-        data = data[2:] + data[:2]
-
-        print(data)
-        if data[0] + data[1] > 900 or data[0] - data[1] < 0:
+        data[0] = int(data[0] / 9)
+        data[1] = int(data[1] / 9)
+        data[2] = int(50 * data[2])
+        if data[0] + data[1] > 100 or data[0] - data[1] < 0:
             msg = 'Please adjust the range of Init Angle and Amplitude to be Small.'
             QMessageBox.about(self, "Connecting", msg)
         else:
+            data = data[2:] + data[:2]
             self.Serial.send_str(mode, data)
-        print("not yet6")
     
     def set_btn(self): # make Button Return2zero & Emergency stop
         self.btn_r2z = QPushButton("Return to Zero")
