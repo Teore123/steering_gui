@@ -29,7 +29,7 @@ class MyApp(QWidget):
         grid.addLayout(self.setting_layout(),1,0)
         grid.addLayout(self.plot_layout(),1,1)
         grid.setColumnStretch(1,1)
-        # self.set_btn_disable()
+        self.set_btn_disable()
         self.serial_refresh()
     
     def center(self): # Mack GUI Center
@@ -89,7 +89,6 @@ class MyApp(QWidget):
         self.port_dict = self.Serial.set_comoprt()
         
         lbl_Comport = QLabel('Port : ')
-        # self.port_cb.addItems(self.port_dict.keys())
         
         port_hbox = QHBoxLayout()
         port_hbox.addWidget(lbl_Comport)
@@ -231,7 +230,6 @@ class MyApp(QWidget):
     def set_btn_disable(self):
         self.btn_BLE.setDisabled(True)
         self.btn_r2z.setDisabled(True)
-        self.btn_connect.setDisabled(True)
 
         # self.btn_mtrOff.setDisabled(True)
         # self.btn_mtrOn.setDisabled(True)
@@ -258,13 +256,13 @@ class MyApp(QWidget):
         vel_hbox.addWidget(self.Const_RPS)
         vel_hbox.addWidget(rps_lbl)
         
-        lbl_range = QLabel('Range(0 ~ 100) :')
+        lbl_range = QLabel('Range(0%s ~ 450%s) :'%(chr(176),chr(176)))
 
-        self.constStr_range = QDoubleSpinBox(self)
-        self.constStr_range.setRange(0, 100)
+        self.constStr_range = QSpinBox(self)
+        self.constStr_range.setRange(0, 450)
         self.constStr_range.setValue(50)
 
-        lbl_range2 = QLabel('%')
+        lbl_range2 = QLabel(chr(176))
 
         range_hbox = QHBoxLayout()
         range_hbox.addWidget(lbl_range)
@@ -309,6 +307,7 @@ class MyApp(QWidget):
         self.Serial.send_mode(self.status.L2L) # mode
 
     def constStr(self): # send msg Const Str to MCU 
+        # self.constStr_cycle.value()
         print("not yet4")
     
     def pause(self): # send msg Pause to MCU
@@ -318,17 +317,21 @@ class MyApp(QWidget):
             self.Serial.send_mode(self.status.pause) # mode
     
     def Sine_Str_tab(self): # Sine Str Tab // Initial Angle, Amplitude, Frequency, Cycle, Start, Pause
-        Sine_Str_setting = ["Initial Angle(0 ~ 100)", "Sine Amplitude(0 ~ 50)",
+        Sine_Str_setting = ["Initial Angle(225%s ~ 675%s)"%(chr(176),chr(176)), "Sine Amplitude(0%s ~ 450%s)"%(chr(176),chr(176)),
                             "Sine Frequency(0 ~ 2)","Number of Cycle(1 ~ 256)" ]
-        Sine_Str_set_unit = ['%', '%', "Hz", "Time" ]
+        Sine_Str_set_unit = [chr(176), chr(176), "Hz", "Time" ]
         Sine_Str_set_value = [self.status.sine_angle, self.status.sine_amp, self.status.sine_freq, self.status.sine_cycle]
-        Sine_Str_set_value_min = [0,0,0,0]
-        Sine_Str_set_value_max = [100,50,2,256]
+        Sine_Str_set_value_min = [225,0,0.1,1]
+        Sine_Str_set_value_max = [675,450,2,256]
         
         SineStr_vbox = QVBoxLayout()
         self.Sine_Str_value = []
         for i in range(len(Sine_Str_setting)):
-            self.Sine_Str_value.append(QDoubleSpinBox(self))
+            if i != 2:
+                self.Sine_Str_value.append(QSpinBox(self))
+            else:
+                self.Sine_Str_value.append(QDoubleSpinBox(self))
+                self.Sine_Str_value[i].setSingleStep(0.1)
             self.Sine_Str_value[i].setMaximum(Sine_Str_set_value_max[i])
             self.Sine_Str_value[i].setMinimum(Sine_Str_set_value_min[i])
             self.Sine_Str_value[i].setValue(Sine_Str_set_value[i])
@@ -343,8 +346,6 @@ class MyApp(QWidget):
             SineStr_hbox.addWidget(Sine_Str_set_unit_lbl)
             
             SineStr_vbox.addLayout(SineStr_hbox)
-        
-        self.Sine_Str_value[2].setSingleStep(0.1)
 
         self.btn_SineStr_start = QPushButton('Start Steering')
         self.btn_SineStr_start.clicked.connect(self.sineStr)
@@ -363,13 +364,25 @@ class MyApp(QWidget):
         return tab   
     
     def sineStr(self): # send msg Sine Str to MCU
+        mode = self.status.SineStr
+        data = []
+        for value in self.Sine_Str_value:
+            data.append(value.value())
+        # data = [speed, cycle, offset, amp]
+        data = data[2:] + data[:2]
+        print(data)
+        if data[0] + data[1] > 900 or data[0] - data[1] < 0:
+            msg = 'Please adjust the range of Init Angle and Amplitude to be Small.'
+            QMessageBox.about(self, "Connecting", msg)
+        else:
+            self.Serial.send_str(mode, data)
         print("not yet6")
     
     def set_btn(self): # make Button Return2zero & Emergency stop
         self.btn_r2z = QPushButton("Return to Zero")
         self.btn_r2z.clicked.connect(self.return2zero)
         
-        self.emergency_btn = QPushButton("Emergency Stop")
+        self.emergency_btn = QPushButton("Motor OFF")
         self.emergency_btn.clicked.connect(self.emergency_stop)
 
         self.emergency_btn.setStyleSheet("background-color : red")
@@ -404,6 +417,7 @@ class MyApp(QWidget):
         status_hbox.addWidget(self.text_para)
         
         self.update_gui([0,0,-1,0,0])
+        self.last_status = -1
         plot_vbox = QVBoxLayout()
         plot_vbox.addLayout(status_hbox)
         self.plot_title = ["Angle","Torque","CAN"]
@@ -419,7 +433,7 @@ class MyApp(QWidget):
         try:
             self.update_gui(status)
             self.append_data(status)
-            # self.btn_able(status)
+            self.btn_able(status)
                 # self.save_data(values)
         except:
             self.Serial.q.put(True)
@@ -444,10 +458,11 @@ class MyApp(QWidget):
         self.status.data[2] = np.append(self.status.data[2][1:], 0)
     
     def btn_able(self, status):
-        for btn in self.status.able_list[status[2]]:
-            self.btn_SineStr_pause.setDisabled(True)
-        "self.btn_" + btn + ".setDisabled(False)"
-        exec()
+        if self.last_status != status[2]:
+            self.set_btn_disable()
+            for btn in self.status.able_list[status[2]]:
+                exec("self.btn_" + btn + ".setDisabled(False)")
+        self.last_status = status[2]
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
