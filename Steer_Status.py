@@ -64,17 +64,3 @@ class Steer_Status():
                  ["ConstStr_pause"],                            # Const Str
                  ["SineStr_pause"]]                             # Sine Str
     
-    
-    # btn_       BLE
-    # btn_       r2z
-    # btn_       connect
-       
-    # btn_       L2L
-    # btn_       L2L_pause
-       
-    # btn_       ConstStr_start
-    # btn_       ConstStr_pause
-       
-    # btn_       SineStr_start
-    # btn_       SineStr_pause
-    
